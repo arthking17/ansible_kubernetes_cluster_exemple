@@ -1,0 +1,17 @@
+---
+  - name: Install and configure kubernetes cluster
+    hosts: master
+    gather_facts: yes
+    become: yes
+    vars:
+        env_type: "{{ env }}"
+        ansible_sudo_pass: "3210"
+    tasks:
+    - name: create token 
+      command: kubeadm token create --print-join-command
+      register: kubernetesClusterToken
+
+    - debug: var=kubernetesClusterToken.stdout
+
+    - name: join the cluster as node
+      command: "{{ kubernetesClusterToken.stdout }}"

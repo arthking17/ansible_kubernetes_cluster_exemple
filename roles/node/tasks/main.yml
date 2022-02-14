@@ -1,0 +1,7 @@
+---
+  #- include_vars:
+   #   file: $HOME/ansible-kubernetes-cluster/roles/master/tasks/main.yml
+    #  name: master
+  - name: join the cluster as node
+    command: kubeadm reset -f #kubeadm join --token ocg62y.j845tjj76gthsebp --v=5
+    ignore_errors: yes

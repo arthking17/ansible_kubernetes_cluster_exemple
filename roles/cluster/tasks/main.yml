@@ -1,0 +1,55 @@
+---
+  - name: install apt-transport-https curl
+    apt:
+      name: 
+       - apt-transport-https
+       - curl
+       - software-properties-common
+      update_cache: yes
+  - name: download google cloud key
+    get_url:
+      url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
+      dest: /tmp/apt-key.gpg
+  - name: add google cloud key
+    command: apt-key add /tmp/apt-key.gpg
+  - name: check if key add correctly
+    command: apt-add-repository "deb http://apt.kubernetes.io/ kubernetes-xenial main"
+  - name: apt-get update
+    apt:
+      update_cache: yes
+  - name: install kubelet kubeadm kubectl and docker
+    apt:
+      name:
+        - kubectl
+        - kubelet
+        - kubeadm
+        - docker.io
+      state: latest
+
+  - name: add daemon.json to /etc/docker/ (need that to correct issue "kubelet is not running or healthy")
+    copy:
+      src: daemon.json
+      dest: /etc/docker/daemon.json
+
+  - name: restart system daemon & docker & kubelet
+    command: "systemctl {{item}}"
+    with_items:
+      - daemon-reload
+      - restart docker
+      - restart kubelet
+
+  - name: check if docker is running
+    command: systemctl status docker
+    register: docker_status
+  - debug: var=docker_status
+
+  - name: check if kubelet is running
+    command: systemctl status kubelet
+    register: kubelet_status
+  - debug: var=kubelet_status
+
+  - name: disable swap (need that to correct issue "swap must be disable" when trying to join a cluster)
+    command: swapoff -a
+
+  - name: reset kubeadm (make sure to reset kube conf in all host if a config already exist to avoid issue config already exist when trying to init master node or join a cluster)
+    command: kubeadm reset -f

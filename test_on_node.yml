@@ -1,0 +1,41 @@
+---
+  - name: Install and configure kubernetes cluster
+    hosts: node
+    gather_facts: yes
+    become: yes
+    vars:
+        env_type: "{{ env }}"
+        ansible_sudo_pass: "3210"
+    tasks:
+        
+    - name: add daemon.json to /etc/docker/
+      copy:
+        src: daemon.json
+        dest: /etc/docker/daemon.json
+
+    - name: restart system daemon & docker & kubelet
+      command: "systemctl {{item}}"
+      with_items:
+        - daemon-reload
+        - restart docker
+        - restart kubelet
+
+    - name: check if docker, kubelet is running
+      command: systemctl status "{{item}}"
+      with_items:
+        - docker
+        - kubelet
+      register: services_state
+
+    - name: Debug
+      debug:
+        var: services_state
+
+    - name: disable swap
+      command: swapoff -a
+
+    - name: reset kubeadm
+      command: kubeadm reset -f
+
+    - name: join the cluster as node
+      command: kubeadm join 192.168.136.130:6443 --token mom98j.6qmf3cu4wx4kxfmn --discovery-token-ca-cert-hash sha256:d5cb2d090f9d473809b09600caeea2ac7638314f516e981a65a319c16ffaac42

@@ -1,0 +1,21 @@
+---
+  - name: Install and configure kubernetes cluster
+    hosts: all
+    gather_facts: yes
+    become: yes
+    roles:
+      - cluster
+  - name: Install and configure kubernetes master
+    hosts: master
+    become: yes
+    roles:
+      - master
+  - name: Install and configure kubernetes node
+    hosts: node
+    become: yes
+    roles:
+      - node
+    
+  - name: check node status
+    hosts: master
+    command: kubectl get nodes
