@@ -1,21 +1,75 @@
 ---
+############### Install and configure kubernetes cluster
   - name: Install and configure kubernetes cluster
     hosts: all
     gather_facts: yes
+    vars:
+        env_type: "{{ env }}"
+        ansible_sudo_pass: "3210"
     become: yes
     roles:
       - cluster
-  - name: Install and configure kubernetes master
-    hosts: master
-    become: yes
-    roles:
-      - master
+
+############### Install and configure kubernetes node
   - name: Install and configure kubernetes node
     hosts: node
+    vars:
+        env_type: "{{ env }}"
+        ansible_sudo_pass: "3210"
     become: yes
     roles:
       - node
-    
-  - name: check node status
+
+############### check services "docker, kubelet"
+  - name: disable swap and check services "docker, kubelet"
+    hosts: all
+    become: yes
+    vars:
+        env_type: "{{ env }}"
+        ansible_sudo_pass: "3210"
+    tasks:
+      - name: disable swap (need that to correct issue "kubelet.service Main process exited, code=exited, status=255" when trying start kubelet service)
+        command: swapoff -a
+
+      - name: check if docker, kubelet is running
+        command: systemctl status "{{item}}"
+        with_items:
+          - docker
+          - kubelet
+        register: services_state
+        ignore_errors: yes
+      #- debug: var=services_state.stdout
+
+############### Install and configure kubernetes master
+  - name: Install and configure kubernetes master
     hosts: master
-    command: kubectl get nodes
+    vars:
+        env_type: "{{ env }}"
+        ansible_sudo_pass: "3210"
+    become: yes
+    roles:
+      - master
+
+############### add node to the cluster
+  - name: add node to the cluster
+    hosts: node
+    vars:
+        env_type: "{{ env }}"
+        ansible_sudo_pass: "3210"
+    become: yes
+    tasks:
+      - name: Include vars of cmd_join_cluster.yaml into the 'cmd_join_cluster' variable.
+        include_vars:
+          file: roles/master/vars/cmd_join_cluster.yml
+          name: cmd_join_cluster
+
+      - name: join the cluster as node
+        command: "{{cmd_join_cluster.stdout}}"
+
+############### check status of all nodes
+  - name: check status of all nodes
+    hosts: master
+    tasks:
+      - name: get nodes status 
+        command: kubectl get nodes
+        ignore_errors: true

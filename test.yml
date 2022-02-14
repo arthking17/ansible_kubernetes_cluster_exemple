@@ -7,11 +7,21 @@
         env_type: "{{ env }}"
         ansible_sudo_pass: "3210"
     tasks:
-    - name: create token 
-      command: kubeadm token create --print-join-command
-      register: kubernetesClusterToken
+    - name: get cluster info
+      command: kubectl cluster-info
+      register: cluster_info
+    - debug: var=cluster_info
+    - name: get nodes status 
+      command: kubectl get nodes
+      register: cluster_nodes
+    - debug: var=cluster_nodes
 
-    - debug: var=kubernetesClusterToken.stdout
+    #- name: generate token
+    #  command: kubeadm token create --print-join-command
+   #   register: cmd_join_cluster
 
-    - name: join the cluster as node
-      command: "{{ kubernetesClusterToken.stdout }}"
+    #- debug: var=cmd_join_cluster.stdout
+
+    #- local_action: copy content={{ cmd_join_cluster }} dest=roles/master/vars/cmd_join_cluster.yml
+#
+    #- debug: var=cluster_nodes.stdout
