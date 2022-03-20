@@ -1,0 +1,22 @@
+---
+  - name: Install and configure kubernetes cluster
+    hosts: master
+    gather_facts: yes
+    become: yes
+    environment:
+      KUBECONFIG: /etc/kubernetes/admin.conftest
+    vars:
+        env_type: "{{ env }}"
+        ansible_sudo_pass: "3210"
+    tasks:
+    - name: create .kube dir
+      file:
+        path: $HOME/.kube
+        state: directory
+        mode: 0755
+    - name: copy /etc/kubernetes/admin.conf to $HOME/.kube/config
+      copy:
+        src: /etc/kubernetes/admin.conf
+        dest: $HOME/.kube/config
+        owner: root
+        remote_src: yes

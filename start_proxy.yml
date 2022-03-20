@@ -1,0 +1,11 @@
+---
+  - name: Install and configure kubernetes cluster
+    hosts: master
+    gather_facts: yes
+    become: yes
+    vars:
+        env_type: "{{ env }}"
+        ansible_sudo_pass: "3210"
+    tasks:
+    - name: start kubernetes proxy on master
+      command: kubectl proxy --address='127.0.0.1'

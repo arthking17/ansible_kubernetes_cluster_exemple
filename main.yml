@@ -6,6 +6,7 @@
     vars:
         env_type: "{{ env }}"
         ansible_sudo_pass: "3210"
+        REGISTRATION_TOKEN: "8i7nK7zB6pagQz8xKBJe"
     become: yes
     roles:
       - cluster
@@ -35,7 +36,7 @@
         command: systemctl status "{{item}}"
         with_items:
           - docker
-          - kubelet
+          #- kubelet
         register: services_state
         ignore_errors: yes
       #- debug: var=services_state.stdout
@@ -73,3 +74,13 @@
       - name: get nodes status 
         command: kubectl get nodes
         ignore_errors: true
+      - name: get pods namespace info
+        command: kubectl get pods --all-namespaces
+        register: pods_namespace
+        ignore_errors: true
+      - debug: var=pods_namespace
+      #- name: add dashboard
+      #  command: "{{item}}"
+      #  with_items:
+      #    - kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.5.0/aio/deploy/recommended.yaml
+      #    - kubectl proxy

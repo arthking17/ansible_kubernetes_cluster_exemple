@@ -15,6 +15,25 @@
       command: kubectl get nodes
       register: cluster_nodes
     - debug: var=cluster_nodes
+    - name: get pods namespace info
+      command: kubectl get pods --all-namespaces
+      register: pods_namespace
+    - debug: var=pods_namespace
+    - name: copy conf files to master
+      copy:
+        src: roles/master/files/
+        dest: /tmp/master/files/
+    - name: add dashboard
+      command: "{{item}}"
+      with_items:
+        - kubectl apply -f /tmp/master/files/kubernetes-dashboard-setup.yml
+        #- kubectl proxy
+    - name: verify dashboard installation
+      command: curl "http://127.0.0.1:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/"
+      register: dashboard
+    - debug: var=dashboard
+    - name: create a service account
+      command: kubectl apply -f /tmp/master/files/dashboard-adminuser.yml
 
     #- name: generate token
     #  command: kubeadm token create --print-join-command

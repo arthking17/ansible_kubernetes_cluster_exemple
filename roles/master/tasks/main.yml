@@ -1,5 +1,8 @@
 ---
-  - name: init kubeadm
+  - name: Control plane node isolation
+    command: kubectl taint nodes --all node-role.kubernetes.io/master-
+    ignore_errors: yes
+  - name: Initialize cluster master node
     command: kubeadm init --pod-network-cidr=192.168.136.0/24
   - name: create .kube dir
     file:
@@ -13,10 +16,45 @@
       owner: root
       remote_src: yes
 
-  - name: generate token
+  - name: Generate token
     command: kubeadm token create --print-join-command
     register: cmd_join_cluster
+
+  - name: Initialize cluster networking
+    command: kubectl apply -f https://raw.githubusercontent.com/cloudnativelabs/kube-router/master/daemonset/kubeadm-kuberouter.yaml
 
   - debug: var=cmd_join_cluster.stdout
 
   - local_action: copy content={{ cmd_join_cluster }} dest=roles/master/vars/cmd_join_cluster.yml
+
+  - name: verify if gitlab-runner is setup correctly
+    command: gitlab-runner --version
+    register: 
+
+  - name: install gitlab-runner
+    command: {{ item }}
+    with_items:
+    - wget -qO - https://packages.gitlab.com/install/repositories/runner/gitlab-runner/script.deb.sh | sudo bash
+    - sudo apt install -y gitlab-runner
+    - gitlab-runner --version
+
+  - name: register a new docker runner
+    command: | 
+      sudo gitlab-runner register -n \
+        --url https://gitlab.com/ \
+        --registration-token GR13489418Pxc5SzVQxcAmZEwcng7 \
+        --executor docker \
+        --description "docker runner" \
+        --docker-image "docker:19.03.12" \
+        --docker-privileged 
+        --tag-list "docker"
+
+  - name: register a new shell runner
+    command: | 
+      sudo gitlab-runner register -n \
+        --url https://gitlab.com/ \
+        --registration-token GR13489418Pxc5SzVQxcAmZEwcng7 \
+        --executor shell \
+        --shell sh
+        --description "shell runner" \
+        --tag-list "shell"
