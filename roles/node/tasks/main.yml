@@ -13,4 +13,5 @@
     with_items:
       - daemon-reload
       - restart docker
-      - restart kubelet
+      - status docker
+      - status containerd

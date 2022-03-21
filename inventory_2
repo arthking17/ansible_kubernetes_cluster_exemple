@@ -1,0 +1,12 @@
+[master]
+192.168.1.30 ansible_ssh_user=kube-01 ansible_ssh_pass=3210
+
+[node]
+192.168.1.32 ansible_ssh_user=kube-03 ansible_ssh_pass=3210
+192.168.1.31 ansible_ssh_user=kube-02 ansible_ssh_pass=3210
+
+
+[cluster]
+192.168.1.32 ansible_ssh_user=kube-03 ansible_ssh_pass=3210
+192.168.1.31 ansible_ssh_user=kube-02 ansible_ssh_pass=3210
+192.168.1.30 ansible_ssh_user=kube-01 ansible_ssh_pass=3210
