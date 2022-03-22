@@ -11,36 +11,6 @@
     roles:
       - cluster
 
-############### Install and configure kubernetes node
-  - name: Install and configure kubernetes node
-    hosts: node
-    vars:
-        env_type: "{{ env }}"
-        ansible_sudo_pass: "3210"
-    become: yes
-    roles:
-      - node
-
-############### check services "docker, kubelet"
-  - name: disable swap and check services "docker, kubelet"
-    hosts: all
-    become: yes
-    vars:
-        env_type: "{{ env }}"
-        ansible_sudo_pass: "3210"
-    tasks:
-      - name: disable swap (need that to correct issue "kubelet.service Main process exited, code=exited, status=255" when trying start kubelet service)
-        command: swapoff -a
-
-      - name: check if docker, kubelet is running
-        command: systemctl status "{{item}}"
-        with_items:
-          - docker
-          #- kubelet
-        register: services_state
-        ignore_errors: yes
-      #- debug: var=services_state.stdout
-
 ############### Install and configure kubernetes master
   - name: Install and configure kubernetes master
     hosts: master

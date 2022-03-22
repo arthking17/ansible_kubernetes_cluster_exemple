@@ -1,6 +1,6 @@
 ---
   - name: Initialize cluster master node
-    command: kubeadm init
+    command: kubeadm init --pod-network-cidr=10.244.0.0/16
   - name: create .kube dir
     file:
       path: $HOME/.kube
