@@ -1,38 +1,56 @@
 ---
   - name: Initialize cluster master node
     command: kubeadm init --pod-network-cidr=10.244.0.0/16
-  
-  - name: create .kube dir
-    file:
-      path: $HOME/.kube
-      state: directory
-      mode: 0755
+    become: yes
   
   - name: remove old kubernetes config
-    command: rm $HOME/.kube/config
+    command: "{{ item }}"
+    with_items:
+      - rm $HOME/.kube/config
+    become: yes
+    ignore_errors: yes
+    become_user: master
+  
+  - name: add username master for configure cluster
+    shell: "{{ item }}"
+    with_items:
+      - useradd master
+      #- echo "itss@2022" | passwd master --stdin
+      - usermod -aG sudo master
     become: yes
     ignore_errors: yes
   
-  - name: copy /etc/kubernetes/admin.conf to $HOME/.kube/config && edit rights of $HOME/.kube/config && set value /etc/kubernetes/admin.conf to KUBECONFIG
+  - name: create .kube dir
+    command: mkdir -p $HOME/.kube
+    become: yes
+    become_user: master
+  
+  - name: copy /etc/kubernetes/admin.conf to $HOME/.kube/config && edit rights of $HOME/.kube/config for master user
     shell: "{{ item }}"
     with_items:
-      - sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
-      - sudo chown $(id -u):$(id -g) $HOME/.kube/config
-      - sudo chown -R $USER $HOME/.kube
-      - export KUBECONFIG=/etc/kubernetes/admin.conf
+      - sudo cp -i /etc/kubernetes/admin.conf /home/master/.kube/config
+      - sudo chown master /home/master/.kube/config
+    become: yes
+  
+  - name: set value /etc/kubernetes/admin.conf to KUBECONFIG for root user
+    command: export KUBECONFIG=/etc/kubernetes/admin.conf
+    become: yes
 
   - name: get nodes status 
     command: kubectl get nodes
-    become: yes
     ignore_errors: true
+    become: yes
+    become_user: master
 
   - name: Generate token
     command: kubeadm token create --print-join-command
     register: cmd_join_cluster
+    become: yes
 
   - name: Initialize cluster networking
     command: kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
     #command: kubectl apply -f https://raw.githubusercontent.com/cloudnativelabs/kube-router/master/daemonset/kubeadm-kuberouter.yaml
+    become: yes
 
   - debug: var=cmd_join_cluster.stdout
 
@@ -40,7 +58,7 @@
 
   - name: verify if gitlab-runner is setup correctly
     command: gitlab-runner --version
-    register: gitlab-runner-version
+    register: gitlab_runner_version
     ignore_errors: yes
 
   - name: install gitlab-runner
@@ -49,6 +67,7 @@
     - wget -qO - https://packages.gitlab.com/install/repositories/runner/gitlab-runner/script.deb.sh | sudo bash
     - sudo apt install -y gitlab-runner
     - gitlab-runner --version
+    become: yes
   
   - name: remove old gitlab-runner
     command: rm /etc/gitlab-runner/config.toml
