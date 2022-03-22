@@ -40,6 +40,9 @@
 ############### check status of all nodes
   - name: check status of all nodes
     hosts: master
+    vars:
+        env_type: "{{ env }}"
+        ansible_sudo_pass: "3210"
     tasks:
       - name: get nodes status 
         command: kubectl get nodes
@@ -54,3 +57,4 @@
       #  with_items:
       #    - kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.5.0/aio/deploy/recommended.yaml
       #    - kubectl proxy
+    become: yes

@@ -1,20 +1,30 @@
 ---
   - name: Initialize cluster master node
     command: kubeadm init --pod-network-cidr=10.244.0.0/16
+  
   - name: create .kube dir
     file:
       path: $HOME/.kube
       state: directory
       mode: 0755
-  - name: copy /etc/kubernetes/admin.conf to $HOME/.kube/config
-    copy:
-      src: /etc/kubernetes/admin.conf
-      dest: $HOME/.kube/config
-      owner: root
-      remote_src: yes
   
-  - name: edit rights of $HOME/.kube/config
-    command: sudo chown $(id -u):$(id -g) $HOME/.kube/config
+  - name: remove old kubernetes config
+    command: rm $HOME/.kube/config
+    become: yes
+    ignore_errors: yes
+  
+  - name: copy /etc/kubernetes/admin.conf to $HOME/.kube/config && edit rights of $HOME/.kube/config && set value /etc/kubernetes/admin.conf to KUBECONFIG
+    shell: "{{ item }}"
+    with_items:
+      - sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+      - sudo chown $(id -u):$(id -g) $HOME/.kube/config
+      - sudo chown -R $USER $HOME/.kube
+      - export KUBECONFIG=/etc/kubernetes/admin.conf
+
+  - name: get nodes status 
+    command: kubectl get nodes
+    become: yes
+    ignore_errors: true
 
   - name: Generate token
     command: kubeadm token create --print-join-command
@@ -30,32 +40,38 @@
 
   - name: verify if gitlab-runner is setup correctly
     command: gitlab-runner --version
-    register: 
+    register: gitlab-runner-version
+    ignore_errors: yes
 
   - name: install gitlab-runner
-    command: "{{ item }}"
+    shell: "{{ item }}"
     with_items:
     - wget -qO - https://packages.gitlab.com/install/repositories/runner/gitlab-runner/script.deb.sh | sudo bash
     - sudo apt install -y gitlab-runner
     - gitlab-runner --version
+  
+  - name: remove old gitlab-runner
+    command: rm /etc/gitlab-runner/config.toml
+    become: yes
+    ignore_errors: yes
 
   - name: register a new docker runner
-    command: | 
+    shell: | 
       sudo gitlab-runner register -n \
         --url https://gitlab.com/ \
         --registration-token GR13489418Pxc5SzVQxcAmZEwcng7 \
         --executor docker \
         --description "docker runner" \
         --docker-image "docker:19.03.12" \
-        --docker-privileged 
+        --docker-privileged \
         --tag-list docker
 
   - name: register a new shell runner
-    command: | 
+    shell: | 
       sudo gitlab-runner register -n \
         --url https://gitlab.com/ \
         --registration-token GR13489418Pxc5SzVQxcAmZEwcng7 \
         --executor shell \
-        --shell bash
+        --shell bash \
         --description "shell runner" \
         --tag-list shell

@@ -1,4 +1,15 @@
----
+---  
+  - name: add new sources.list file
+    copy:
+      src: sources.list
+      dest: /etc/apt/sources.list
+      force: yes
+
+  - name: download package information from all configured sources
+    command: apt-get update
+    become: yes
+    ignore_errors: true
+
   - name: Make sure that the br_netfilter module is loaded
     shell: |
       cat <<EOF | tee /etc/modules-load.d/k8s.conf
@@ -40,10 +51,22 @@
       gnupg \
       lsb-release
     ignore_errors: true
+    become: yes
 
   - name: remove old docker keys
     command: rm /usr/share/keyrings/docker-archive-keyring.gpg
     ignore_errors: true
+    become: yes
+
+  - name: Make sure that dns server are correctly configure
+    shell: |
+      cat <<EOF | tee /etc/resolv.conf
+      nameserver 8.8.8.8
+      nameserver 8.8.4.4
+      EOF
+    become: yes
+    args:
+      executable: /bin/bash
 
   - name: Add Docker's official GPG key
     shell: curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
@@ -62,6 +85,7 @@
 
   - name: define name later
     command:  apt-get install -y docker-ce docker-ce-cli containerd.io
+    ignore_errors: true
 
   - name: Update apt package index
     command: sudo apt-get update
