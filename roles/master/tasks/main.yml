@@ -32,24 +32,26 @@
   - debug: var=cmd_join_cluster.stdout
   - local_action: copy content={{ cmd_join_cluster }} dest=roles/master/vars/cmd_join_cluster.yml
 
-  - name: Initialize cluster networking
-    command: kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
-    #command: kubectl apply -f https://raw.githubusercontent.com/cloudnativelabs/kube-router/master/daemonset/kubeadm-kuberouter.yaml
-
-  - name: Deploying the Dashboard UI
-    command: "{{item}}"
-    with_items:
-      - kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.5.0/aio/deploy/recommended.yaml
-      #- kubectl proxy --address='0.0.0.0' --accept-hosts='^*$' --port 8001
-
   - name: copy dashboard-adminuser.yaml in master node
     copy:
       src: "{{ item }}"
       dest: /kube-config/
       force: yes
       with_items:
+        - kube-flannel.yaml
+        - kubernetes-dashboard-setup.yaml
         - dashboard-adminuser.yaml
         - cluster-role-binding.yaml
+
+  - name: Initialize cluster networking
+    command: kubectl apply -f /kube-config/kube-flannel.yaml
+    #command: kubectl apply -f https://raw.githubusercontent.com/cloudnativelabs/kube-router/master/daemonset/kubeadm-kuberouter.yaml
+
+  - name: Deploying the Dashboard UI
+    command: "{{item}}"
+    with_items:
+      - kubectl apply -f /kube-config/kubernetes-dashboard-setup.yaml
+      #- kubectl proxy --address='0.0.0.0' --accept-hosts='^*$' --port 8001
 
   - name: create user admin to access kubernetes dashboard
     command: "{{ item }}"

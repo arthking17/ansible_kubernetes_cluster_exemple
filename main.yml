@@ -5,7 +5,7 @@
     gather_facts: yes
     vars:
         env_type: "{{ env }}"
-        ansible_sudo_pass: "3210"
+        ansible_sudo_pass: "{{ sudo_password }}"
         REGISTRATION_TOKEN: "8i7nK7zB6pagQz8xKBJe"
     become: yes
     roles:
@@ -16,7 +16,7 @@
     hosts: master
     vars:
         env_type: "{{ env }}"
-        ansible_sudo_pass: "3210"
+        ansible_sudo_pass: "{{ sudo_password }}"
     become: yes
     roles:
       - master
@@ -26,7 +26,7 @@
     hosts: node
     vars:
         env_type: "{{ env }}"
-        ansible_sudo_pass: "3210"
+        ansible_sudo_pass: "{{ sudo_password }}"
     become: yes
     tasks:
       - name: Include vars of cmd_join_cluster.yaml into the 'cmd_join_cluster' variable.
@@ -38,11 +38,11 @@
         command: "{{cmd_join_cluster.stdout}}"
 
 ############### check status of all nodes
-  - name: check status of all nodes
+  - name: verify config on master node and check status of nodes
     hosts: master
     vars:
         env_type: "{{ env }}"
-        ansible_sudo_pass: "3210"
+        ansible_sudo_pass: "{{ sudo_password }}"
     tasks:
       - name: get nodes status 
         command: kubectl get nodes
@@ -52,4 +52,13 @@
         register: pods_namespace
         ignore_errors: true
       - debug: var=pods_namespace
+      - name: verify gitlab-runners
+        command: gitlab-runner verify
+        ignore_errors: true
+
+    ############### WARNING !!!!!!!!!!!
+      - name: WARNING!!!
+        debug: 
+          msg: 
+          - var warning = "please don't forget to remove this files ( << cmd_join_cluster.yml | kubernetes_dashboard_token.yml >> ) before saving this project online"
     become: yes

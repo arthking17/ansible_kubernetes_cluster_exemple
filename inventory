@@ -1,12 +1,12 @@
 [master]
-192.168.136.129 ansible_ssh_user=kube-02 ansible_ssh_pass=3210
+192.168.136.129 ansible_ssh_user=kube-02 ansible_ssh_pass="{{ host_password }}"
 
 [node]
-192.168.136.128 ansible_ssh_user=kube-03 ansible_ssh_pass=3210
-192.168.136.139 ansible_ssh_user=kube-04 ansible_ssh_pass=3210
+192.168.136.128 ansible_ssh_user=kube-03 ansible_ssh_pass="{{ host_password }}"
+192.168.136.139 ansible_ssh_user=kube-04 ansible_ssh_pass="{{ host_password }}"
 
 
 [cluster]
-192.168.136.128 ansible_ssh_user=kube-03 ansible_ssh_pass=3210
-192.168.136.129 ansible_ssh_user=kube-02 ansible_ssh_pass=3210
-192.168.136.139 ansible_ssh_user=kube-04 ansible_ssh_pass=3210
+192.168.136.128 ansible_ssh_user=kube-03 ansible_ssh_pass="{{ host_password }}"
+192.168.136.129 ansible_ssh_user=kube-02 ansible_ssh_pass="{{ host_password }}"
+192.168.136.139 ansible_ssh_user=kube-04 ansible_ssh_pass="{{ host_password }}"
