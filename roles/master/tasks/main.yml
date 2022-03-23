@@ -1,60 +1,69 @@
 ---
   - name: Initialize cluster master node
     command: kubeadm init --pod-network-cidr=10.244.0.0/16
-    become: yes
   
   - name: remove old kubernetes config
     command: "{{ item }}"
     with_items:
       - rm $HOME/.kube/config
-    become: yes
-    ignore_errors: yes
-    become_user: master
-  
-  - name: add username master for configure cluster
-    shell: "{{ item }}"
-    with_items:
-      - useradd master
-      #- echo "itss@2022" | passwd master --stdin
-      - usermod -aG sudo master
-    become: yes
     ignore_errors: yes
   
-  - name: create .kube dir
-    command: mkdir -p $HOME/.kube
-    become: yes
-    become_user: master
-  
-  - name: copy /etc/kubernetes/admin.conf to $HOME/.kube/config && edit rights of $HOME/.kube/config for master user
+  - name: create .kube dir && copy /etc/kubernetes/admin.conf to $HOME/.kube/config && edit rights of $HOME/.kube/config for master user
     shell: "{{ item }}"
     with_items:
-      - sudo cp -i /etc/kubernetes/admin.conf /home/master/.kube/config
-      - sudo chown master /home/master/.kube/config
+      - mkdir -p $HOME/.kube
+      - sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+      - sudo chown $(id -u):$(id -g) $HOME/.kube/config
     become: yes
   
   - name: set value /etc/kubernetes/admin.conf to KUBECONFIG for root user
-    command: export KUBECONFIG=/etc/kubernetes/admin.conf
+    command: sudo export KUBECONFIG=/etc/kubernetes/admin.conf
     become: yes
+    ignore_errors: true
 
   - name: get nodes status 
     command: kubectl get nodes
     ignore_errors: true
-    become: yes
-    become_user: master
 
   - name: Generate token
     command: kubeadm token create --print-join-command
     register: cmd_join_cluster
-    become: yes
+
+  - debug: var=cmd_join_cluster.stdout
+  - local_action: copy content={{ cmd_join_cluster }} dest=roles/master/vars/cmd_join_cluster.yml
 
   - name: Initialize cluster networking
     command: kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
     #command: kubectl apply -f https://raw.githubusercontent.com/cloudnativelabs/kube-router/master/daemonset/kubeadm-kuberouter.yaml
-    become: yes
 
-  - debug: var=cmd_join_cluster.stdout
+  - name: Deploying the Dashboard UI
+    command: "{{item}}"
+    with_items:
+      - kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.5.0/aio/deploy/recommended.yaml
+      #- kubectl proxy --address='0.0.0.0' --accept-hosts='^*$' --port 8001
 
-  - local_action: copy content={{ cmd_join_cluster }} dest=roles/master/vars/cmd_join_cluster.yml
+  - name: copy dashboard-adminuser.yaml in master node
+    copy:
+      src: "{{ item }}"
+      dest: /kube-config/
+      force: yes
+      with_items:
+        - dashboard-adminuser.yaml
+        - cluster-role-binding.yaml
+
+  - name: create user admin to access kubernetes dashboard
+    command: "{{ item }}"
+    with_items:
+      - kubectl apply -f /kube-config/dashboard-adminuser.yaml
+      - kubectl apply -f /kube-config/cluster-role-binding.yaml
+
+  - name: generate token for user admin to access the kubernetes dashboard
+    shell: kubectl -n kubernetes-dashboard get secret $(kubectl -n kubernetes-dashboard get sa/admin-user -o jsonpath="{.secrets[0].name}") -o go-template="{{.data.token | base64decode}}"
+    register: kubernetes_dashboard_token
+    ignore_errors: yes
+
+  - debug: var=kubernetes_dashboard_token.stdout
+  - local_action: copy content={{ kubernetes_dashboard_token }} dest=roles/master/vars/kubernetes_dashboard_token.yml
 
   - name: verify if gitlab-runner is setup correctly
     command: gitlab-runner --version
@@ -67,11 +76,9 @@
     - wget -qO - https://packages.gitlab.com/install/repositories/runner/gitlab-runner/script.deb.sh | sudo bash
     - sudo apt install -y gitlab-runner
     - gitlab-runner --version
-    become: yes
   
   - name: remove old gitlab-runner
     command: rm /etc/gitlab-runner/config.toml
-    become: yes
     ignore_errors: yes
 
   - name: register a new docker runner
