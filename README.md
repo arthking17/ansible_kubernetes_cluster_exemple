@@ -35,6 +35,6 @@ $ ansible -m ping -i inventory all #test the connection
 
 ## Run a playbook
 
-- [ ] this cmd will ask for vault password use to encrypt encrypt_var used in the playbook
+- this cmd will ask for vault password use to encrypt encrypt_var used in the playbook
 ```
 $ ansible-playbook -i inventory main.yml --ask-vault-password
