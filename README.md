@@ -1,4 +1,4 @@
-# cluster_kubernetes
+# Automate creation of cluster kubernetes using Ansible
 
 Automation of Kubernetes cluster creation ( Im using Ubuntu 16.* as server OS)
 
