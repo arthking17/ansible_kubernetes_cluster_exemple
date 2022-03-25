@@ -1,0 +1,4 @@
+.vault.yml
+roles/master/vars/cmd_join_cluster.yml
+roles/master/vars/kubernetes_dashboard_token.yml
+group_vars/all/vars

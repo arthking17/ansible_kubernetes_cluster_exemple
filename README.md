@@ -1,6 +1,6 @@
 # cluster_kubernetes
 
-Automation of Kubernetes cluster creation
+Automation of Kubernetes cluster creation ( Im using Ubuntu 16.* as server OS)
 
 
 ## Get started with creation of Kubernetes cluster using Ansible 🛠️⚙️💡
@@ -8,23 +8,8 @@ Automation of Kubernetes cluster creation
 ## share ssh-key to all hosts to configure
 
 ```
-$ ssh-keygen #on all host where you want to connect via ssh 
+$ ssh-keygen #on all host where you want to connect via ssh
 $ ssh-copy-id username@ip-addr #ip-addr of host where you generate ssh key
-```
-
-## create vault password
-
-- [ ] generate the encrypt_value in terminal before copy it
-```
-$ ansible-vault encrypt_string 'string_to_encrypt' --ask-vault-pass  --name 'encrypt_var_name'
-```
-- [ ] create a vault to store all var you want to hide ( for group cluster )
-```
-$ ansible-vault create group_vars/cluster/vault
-```
-- [ ] edit a vault to store all var you want to hide ( for group cluster )
-```
-$ ansible-vault edit group_vars/cluster/vault
 ```
 
 ## And you are now able to connect to those hosts, try the command below to test the connection
@@ -33,8 +18,31 @@ $ ansible-vault edit group_vars/cluster/vault
 $ ansible -m ping -i inventory all #test the connection
 ```
 
+## You need to generate encrypt_value for var sudo_password and host_password needed in playbook and inventory file
+
+- [ ] first method by creating encrypting variable and store the encrypt var in your project
+```
+$ ansible-vault encrypt_string 'sudo_password_val' --ask-vault-pass  --name 'sudo_password'
+$ ansible-vault encrypt_string 'host_password_val' --ask-vault-pass  --name 'host_password'
+```
+
+- [ ] second method by creating a vault file to store all sensible information
+    - cmd to create a vault file
+```
+$ ansible-vault create group_vars/all/vault
+```
+    - cmd to edit your vault file
+```
+$ ansible-vault edit group_vars/all/vault
+```
+
 ## Run a playbook
 
 - this cmd will ask for vault password use to encrypt encrypt_var used in the playbook
 ```
 $ ansible-playbook -i inventory main.yml --ask-vault-password
+```
+- [ ] with this cmd you have to create a file ( exple .vault.yml ) who will content your vaul password
+```
+$ ansible-playbook -i inventory main.yml --vault-id .vault.yml
+```
