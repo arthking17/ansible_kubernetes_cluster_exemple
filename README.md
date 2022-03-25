@@ -31,18 +31,18 @@ $ ansible-vault encrypt_string 'host_password_val' --ask-vault-pass  --name 'hos
 ```
 $ ansible-vault create group_vars/all/vault
 ```
- - cmd to edit your vault file
+- cmd to edit your vault file
 ```
 $ ansible-vault edit group_vars/all/vault
 ```
 
 ## Run a playbook
 
-- [ ] this cmd will ask for vault password use to encrypt encrypt_var used in the playbook
+- [ ] directly enter the vault pwd in terminal when using this cmd
 ```
 $ ansible-playbook -i inventory main.yml --ask-vault-password
 ```
-- [ ] with this cmd you have to create a file ( exple .vault.yml ) who will content your vaul password
+- [ ] with this cmd you have to create a file ( exple .vault_pwd.txt ) who will content your vault password
 ```
-$ ansible-playbook -i inventory main.yml --vault-id .vault.yml
+$ ansible-playbook -i inventory main.yml --vault-id .vault_pwd.txt
 ```
