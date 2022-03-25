@@ -38,7 +38,7 @@ $ ansible-vault edit group_vars/all/vault
 
 ## Run a playbook
 
-- this cmd will ask for vault password use to encrypt encrypt_var used in the playbook
+- [ ] this cmd will ask for vault password use to encrypt encrypt_var used in the playbook
 ```
 $ ansible-playbook -i inventory main.yml --ask-vault-password
 ```
