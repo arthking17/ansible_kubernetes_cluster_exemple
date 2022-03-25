@@ -27,11 +27,11 @@ $ ansible-vault encrypt_string 'host_password_val' --ask-vault-pass  --name 'hos
 ```
 
 - [ ] second method by creating a vault file to store all sensible information
-    - cmd to create a vault file
+- cmd to create a vault file
 ```
 $ ansible-vault create group_vars/all/vault
 ```
-    - cmd to edit your vault file
+ - cmd to edit your vault file
 ```
 $ ansible-vault edit group_vars/all/vault
 ```
